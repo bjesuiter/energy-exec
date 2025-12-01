@@ -62,7 +62,9 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Implement user ID whitelist (single authorized user)
 - [ ] Add basic command handlers (`/start`, `/help`)
 - [ ] Set up Elysia server with health check endpoint
-- [ ] Configure webhook or long-polling based on environment
+- [ ] Configure connection mode based on `NODE_ENV`:
+  - Development: Long polling (no webhook needed)
+  - Production: Webhook endpoint at `/webhook`
 - [ ] Error handling and logging
 
 ### Phase 3: Onboarding Flow
@@ -218,7 +220,7 @@ This document provides comprehensive context about the repository architecture, 
 
 ```
 # Telegram
-TELEGRAM_BOT_TOKEN=           # From @BotFather
+TELEGRAM_BOT_TOKEN=           # Bot token (dev or prod, from @BotFather)
 AUTHORIZED_USER_ID=           # Your Telegram user ID
 
 # AI
@@ -227,12 +229,32 @@ OPENCODE_ZEN_BASE_URL=        # Base URL for opencode-zen API
 
 # Server
 PORT=3000                     # Elysia server port
-WEBHOOK_URL=                  # Telegram webhook URL (production)
-USE_WEBHOOK=false             # true in production, false for local dev
+NODE_ENV=development          # "development" or "production"
+
+# Webhook (production only)
+WEBHOOK_URL=                  # Telegram webhook URL (e.g., https://your-app.railway.app/webhook)
 
 # Database
 DATABASE_PATH=./data/energy.db  # SQLite file path
 ```
+
+### Telegram Bot Setup
+
+Two separate bots are used to avoid conflicts between local development and production:
+
+| Environment | Bot | Connection | Created via |
+|-------------|-----|------------|-------------|
+| Development | `@YourDevBot` | Long polling | @BotFather |
+| Production | `@YourProdBot` | Webhook | @BotFather |
+
+**Why two bots?**
+- Long polling and webhooks conflict if both try to receive updates for the same bot
+- Separate bots allow local testing without disrupting production
+- Different bot tokens in `.env` (local) vs Railway environment variables (prod)
+
+**Connection mode logic:**
+- `NODE_ENV=development` → Long polling (no server needed to receive updates)
+- `NODE_ENV=production` → Webhook at `WEBHOOK_URL` (Railway provides HTTPS)
 
 ---
 
