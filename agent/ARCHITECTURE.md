@@ -270,6 +270,11 @@ Two separate bots are used to avoid conflicts between local development and prod
 - `NODE_ENV=development` → Long polling (no server needed to receive updates)
 - `NODE_ENV=production` → Webhook at `WEBHOOK_URL` (Railway provides HTTPS)
 
+**Important distinction:**
+- **Automated tests do NOT use Telegram at all** — they test via the `MessageHandler` abstraction with plain strings
+- **Dev bot is for manual testing** — interacting with the bot while developing, checking UX/formatting, dogfooding features
+- The dev bot is your sandbox; the prod bot is the one you rely on daily
+
 ---
 
 ## Testing Strategy
@@ -323,7 +328,8 @@ To test core logic without Telegram or AI dependencies:
 
 **Telegram Mock:**
 - Not needed — `MessageHandler` abstraction bypasses Telegram entirely
-- Bot layer is thin adapter that calls `MessageHandler`
+- Bot layer is a thin adapter that calls `MessageHandler`
+- Automated tests never touch Telegram; dev bot is for manual testing only
 
 ### Folder Structure Addition
 
