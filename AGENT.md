@@ -46,3 +46,18 @@ needed.**
 - User asks for clarification or more information
 
 ---
+
+## Agent Documentation
+
+- **Decisions**: `agent/decisions/YYYY_MM_DD_topic.md`
+- **Summaries**: `agent/summaries/` (implementation notes, test strategies)
+- **Temporary files**: `agent/tmp/` (not committed)
+- Keep `agent/ARCHITECTURE.md` high-level; details go in decision files
+
+---
+
+## Documentation Search
+
+Use `context7` tools: resolve library ID first, then fetch docs.
+
+---
