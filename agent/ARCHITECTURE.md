@@ -46,6 +46,8 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Set up folder structure (see System Architecture below)
 - [ ] Create `.env.example` with required environment variables
 - [ ] Add biome for linting/formatting
+- [ ] Set up bun:test with basic test structure
+- [ ] Install drizzle-seed for test data seeding
 
 ### Phase 1: Database Setup
 
@@ -55,6 +57,8 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Create schema: `daily_logs` table (structured daily summaries)
 - [ ] Set up Drizzle migrations
 - [ ] Create database helper functions (get/set config, log message, etc.)
+- [ ] Set up in-memory SQLite test helper
+- [ ] Add unit tests for database services
 
 ### Phase 2: Telegram Bot Core
 
@@ -66,6 +70,8 @@ This document provides comprehensive context about the repository architecture, 
   - Development: Long polling (no webhook needed)
   - Production: Webhook endpoint at `/webhook`
 - [ ] Error handling and logging
+- [ ] Create `MessageHandler` abstraction (Telegram-free interface)
+- [ ] Add unit tests for message handler with plain strings
 
 ### Phase 3: Onboarding Flow
 
@@ -83,6 +89,9 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Create base system prompt for energy-aware planning
 - [ ] Implement basic message → AI → response flow
 - [ ] Handle AI errors gracefully
+- [ ] Create `AIClient` interface for swappable implementations
+- [ ] Add mock AI client for testing
+- [ ] Add unit tests for prompt builder
 
 ### Phase 5: Check-in Conversations
 
@@ -98,9 +107,11 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Implement mid-day update handling (free-form messages)
 - [ ] Store all check-in data in `daily_logs` table
 - [ ] Log raw messages to `messages` table
+- [ ] Add integration tests for conversation flows (mocked AI)
 
 ### Phase 6: Intelligent Day Planning
 
+- [ ] Create `Clock` abstraction for injectable time (testability)
 - [ ] Load current day's log (if exists) for context
 - [ ] Load previous N days' summaries for patterns (start with 3-7 days)
 - [ ] Craft prompt with user state + history + current request
@@ -111,6 +122,7 @@ This document provides comprehensive context about the repository architecture, 
   - Meeting/appointment integration
 - [ ] Handle plan adjustments (user sends update → regenerate)
 - [ ] Format responses for Telegram (markdown, clear structure)
+- [ ] Add unit tests for planner logic (work blocks, breaks, timing)
 
 ### Phase 7: Deployment
 
@@ -129,6 +141,8 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Web dashboard for viewing history (if needed)
 - [ ] Multi-user support (if needed)
 - [ ] Upgrade to more capable LLM if big-pickle proves insufficient
+- [ ] evalite integration for AI response quality testing
+- [ ] Define AI test cases and expected response patterns
 
 ---
 
@@ -255,6 +269,83 @@ Two separate bots are used to avoid conflicts between local development and prod
 **Connection mode logic:**
 - `NODE_ENV=development` → Long polling (no server needed to receive updates)
 - `NODE_ENV=production` → Webhook at `WEBHOOK_URL` (Railway provides HTTPS)
+
+---
+
+## Testing Strategy
+
+### Test Runner
+
+Bun's built-in test runner (`bun:test`) for all tests.
+
+### Database Testing
+
+- **In-memory SQLite** for fast, ephemeral test runs
+- **drizzle-seed** for seeding test data (previous days' logs, config, etc.)
+- Each test suite gets a fresh database instance
+
+### Abstraction Layers for Testability
+
+To test core logic without Telegram or AI dependencies:
+
+| Abstraction | Purpose |
+|-------------|---------|
+| `MessageHandler` | `handleMessage(text, context) → Response` — Telegram-free message processing |
+| `AIClient` interface | Swappable: real provider vs mock for tests |
+| `Clock` | Inject time instead of `new Date()` — test morning/evening logic |
+| `Database` | Inject connection — production file vs test in-memory |
+
+### Test Categories
+
+#### Unit Tests
+- **Planner logic**: Work block calculations, break timing, tea recommendations
+- **Prompt builder**: Assert prompts contain expected context/data
+- **Config service**: Get/set operations
+- **Daily log service**: CRUD, date queries, history loading
+- **Message parsing**: Extract structured data from free-form text
+
+#### Integration Tests
+- **Conversation flows**: Simulate multi-step check-ins with mocked session
+- **Full message → response flow**: With mocked AI, assert response structure
+- **Database seeding → history loading**: Verify context is built correctly
+
+#### AI Tests (Future)
+- **evalite** integration for AI response quality testing
+- Structure TBD once evalite patterns are established
+- Placeholder phase in roadmap
+
+### Mocking Strategy
+
+**AI Client Mock:**
+- Returns canned responses based on input patterns
+- Allows asserting prompt structure without calling real AI
+- Configurable per-test for different scenarios
+
+**Telegram Mock:**
+- Not needed — `MessageHandler` abstraction bypasses Telegram entirely
+- Bot layer is thin adapter that calls `MessageHandler`
+
+### Folder Structure Addition
+
+```
+src/
+├── ...
+├── lib/
+│   ├── clock.ts              # Time abstraction (injectable)
+│   └── interfaces.ts         # AIClient, MessageHandler interfaces
+└── tests/
+    ├── setup.ts              # Test database setup, mocks
+    ├── seed.ts               # drizzle-seed helpers
+    ├── unit/
+    │   ├── planner.test.ts
+    │   ├── prompt-builder.test.ts
+    │   └── services.test.ts
+    ├── integration/
+    │   ├── conversations.test.ts
+    │   └── message-flow.test.ts
+    └── ai/                   # Future: evalite tests
+        └── .gitkeep
+```
 
 ---
 
