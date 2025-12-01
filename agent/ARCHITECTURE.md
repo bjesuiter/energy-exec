@@ -6,6 +6,8 @@ This document provides comprehensive context about the repository architecture, 
 
 ## Roadmap
 
+**Evergreen Section:** Always update this section when steps are finished or changed. Mark completed steps with `[x]` and update step descriptions as needed.
+
 ### Phase 1: [Phase Name]
 
 - [ ] Step 1 description
