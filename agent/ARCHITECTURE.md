@@ -1,6 +1,6 @@
 # Architecture
 
-This document provides comprehensive context about the repository architecture, planning, roadmap, and progress. Use this file to give a new LLM chat session full context for working on tasks.
+This document provides comprehensive context about the repository architecture, planning, and roadmap. Use this file to give a new LLM chat session full context for working on tasks.
 
 ---
 
@@ -28,11 +28,5 @@ This document provides comprehensive context about the repository architecture, 
 
 - [ ] Step 1 description
 - [ ] Step 2 description
-
----
-
-## Progress & Status
-
-*Track current progress, completed milestones, and active work items here.*
 
 ---
