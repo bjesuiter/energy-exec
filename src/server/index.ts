@@ -1,12 +1,12 @@
 import { Elysia } from "elysia";
 import packageJson from "@/package.json";
-
-const port = parseInt(process.env.PORT || "3000", 10);
+import type { Bot } from "grammy";
 
 /**
  * Create and configure Elysia server
+ * @param bot Optional grammY bot instance for webhook handling
  */
-export function createServer() {
+export function createServer(bot?: Bot) {
     const app = new Elysia()
         .get("/health", () => {
             return {
@@ -22,14 +22,17 @@ export function createServer() {
             };
         });
 
-    return app;
-}
+    // Add webhook endpoint if bot is provided
+    if (bot) {
+        app.post("/webhook", async ({ request }) => {
+            const update = await request.json();
+            // bot.handleUpdate accepts Update type, which matches Telegram's update object
+            await bot.handleUpdate(
+                update as Parameters<typeof bot.handleUpdate>[0],
+            );
+            return { ok: true };
+        });
+    }
 
-/**
- * Start the Elysia server
- */
-export function startServer(app: Elysia) {
-    app.listen(port, ({ hostname, port: serverPort }) => {
-        console.log(`🦊 Server running at http://${hostname}:${serverPort}`);
-    });
+    return app;
 }
