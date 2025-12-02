@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import { db, type Message, messages } from "../db";
 
 export interface TelegramLogMessageParams {
@@ -62,5 +62,34 @@ export async function getRecentTelegramMessages(
         .from(messages)
         .orderBy(desc(messages.createdAt))
         .limit(limit)
+        .all();
+}
+
+/**
+ * Get Telegram messages for a specific date
+ * @param date Date in YYYY-MM-DD format
+ * @returns Array of message entries for that date, ordered by creation time (most recent first)
+ */
+export async function getTelegramMessagesByDate(
+    date: string,
+): Promise<Message[]> {
+    // Parse the date string (YYYY-MM-DD)
+    const dateObj = new Date(date + "T00:00:00.000Z");
+    const startOfDay = new Date(dateObj);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(dateObj);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    return await db
+        .select()
+        .from(messages)
+        .where(
+            and(
+                gte(messages.createdAt, startOfDay),
+                lte(messages.createdAt, endOfDay),
+            ),
+        )
+        .orderBy(desc(messages.createdAt))
         .all();
 }
