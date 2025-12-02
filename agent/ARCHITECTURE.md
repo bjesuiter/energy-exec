@@ -158,22 +158,23 @@ This document provides comprehensive context about the repository architecture, 
 │   ├── index.ts              # Entry point, starts Elysia + bot
 │   ├── server/
 │   │   └── index.ts          # Elysia server setup, routes
-│   ├── bot/
-│   │   ├── index.ts          # grammY bot initialization
-│   │   ├── commands/         # Command handlers (/start, /help, etc.)
-│   │   ├── conversations/    # Multi-step conversation flows
-│   │   └── middleware/       # Auth, logging, error handling
-│   ├── ai/
-│   │   ├── client.ts         # Vercel AI SDK setup
-│   │   └── prompts/          # System prompts and prompt builders
-│   ├── db/
-│   │   ├── index.ts          # Drizzle client
-│   │   ├── schema.ts         # Table definitions
-│   │   └── migrations/       # Drizzle migrations
-│   └── services/
-│       ├── config.ts         # Config get/set helpers
-│       ├── daily-log.ts      # Daily log CRUD
-│       └── planner.ts        # Day planning logic
+│   └── lib/
+│       ├── bot/
+│       │   ├── index.ts      # grammY bot initialization
+│       │   ├── commands/     # Command handlers (/start, /help, etc.)
+│       │   ├── conversations/ # Multi-step conversation flows
+│       │   └── middleware/  # Auth, logging, error handling
+│       ├── ai/
+│       │   ├── client.ts     # Vercel AI SDK setup
+│       │   └── prompts/      # System prompts and prompt builders
+│       ├── db/
+│       │   ├── index.ts      # Drizzle client
+│       │   ├── schema.ts     # Table definitions
+│       │   └── migrations/   # Drizzle migrations
+│       └── services/
+│           ├── config.ts    # Config get/set helpers
+│           ├── daily-log.ts  # Daily log CRUD
+│           └── planner.ts    # Day planning logic
 ├── agent/
 │   ├── ARCHITECTURE.md       # This file
 │   ├── AGENT.md              # Agent instructions
@@ -336,9 +337,10 @@ To test core logic without Telegram or AI dependencies:
 ```
 src/
 ├── ...
-├── lib/
-│   ├── clock.ts              # Time abstraction (injectable)
-│   └── interfaces.ts         # AIClient, MessageHandler interfaces
+├── src/
+│   ├── lib/
+│   │   ├── clock.ts          # Time abstraction (injectable)
+│   │   └── interfaces.ts     # AIClient, MessageHandler interfaces
 └── tests/
     ├── setup.ts              # Test database setup, mocks
     ├── seed.ts               # drizzle-seed helpers

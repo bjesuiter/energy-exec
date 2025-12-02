@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { createTestDatabase } from "../setup";
-import * as schema from "../../db/schema";
+import * as schema from "@/src/lib/db/schema";
 
 // Create test database once
 const { db: testDb } = createTestDatabase();
 
 // Set up mocks before importing services
-mock.module("../../db", () => ({
+mock.module("@/src/lib/db", () => ({
     db: testDb,
     config: schema.config,
     messages: schema.messages,
@@ -14,9 +14,9 @@ mock.module("../../db", () => ({
 }));
 
 // Import services after mocking
-import * as configService from "../../services/config";
-import * as telegramLogService from "../../services/telegram-message-log";
-import * as dailyLogService from "../../services/daily-log";
+import * as configService from "@/src/lib/services/config";
+import * as telegramLogService from "@/src/lib/services/telegram-message-log";
+import * as dailyLogService from "@/src/lib/services/daily-log";
 
 describe("Config Service", () => {
     test("getConfig returns null for non-existent key", async () => {

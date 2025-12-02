@@ -1,7 +1,7 @@
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import * as schema from "../db/schema";
+import * as schema from "@/src/lib/db/schema";
 import { join } from "path";
 
 /**
@@ -16,7 +16,7 @@ export function createTestDatabase() {
     const db = drizzle(sqlite, { schema });
 
     // Run migrations to set up tables
-    const migrationsFolder = join(import.meta.dir, "../db/migrations");
+    const migrationsFolder = join(import.meta.dir, "../src/lib/db/migrations");
 
     migrate(db, { migrationsFolder });
 
