@@ -4,6 +4,7 @@ import { authMiddleware } from "./middleware/auth";
 import { errorHandlerMiddleware } from "./middleware/error-handler";
 import { handleStart } from "./commands/start";
 import { handleHelp } from "./commands/help";
+import { handleModels, handleModelSelection } from "./commands/models";
 import { DefaultMessageHandler } from "@/src/lib/message-handler";
 import { logger } from "@/src/lib/logger";
 import { onboardingConversation } from "./conversations/onboarding";
@@ -36,6 +37,7 @@ bot.use(createConversation(onboardingConversation));
 // Command handlers
 bot.command("start", handleStart);
 bot.command("help", handleHelp);
+bot.command("models", handleModels);
 
 // Handle text messages (non-commands)
 bot.on("message:text", async (ctx) => {
@@ -45,6 +47,12 @@ bot.on("message:text", async (ctx) => {
             messageId: ctx.message.message_id,
             textLength: ctx.message.text.length,
         });
+
+        // Check if this is a model selection first
+        const handled = await handleModelSelection(ctx, ctx.message.text);
+        if (handled) {
+            return; // Model selection was handled, don't process as regular message
+        }
 
         const response = await messageHandler.handleMessage(ctx.message.text, {
             userId: ctx.from.id,

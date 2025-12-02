@@ -7,8 +7,9 @@ import { logTelegramMessage } from "./services/telegram-message-log";
 import { logger } from "./logger";
 import { buildPrompt } from "./ai/prompts";
 import { getConfig } from "./services/config";
-import { getZenOpenAICompatible } from "./ai/providers";
+import { getZenGoogle, getZenOpenAICompatible } from "./ai/providers";
 import { generateText } from "ai";
+import type { ModelType } from "@/src/bot/commands/models";
 
 /**
  * Default message handler implementation
@@ -35,14 +36,27 @@ export class DefaultMessageHandler implements MessageHandler {
                 timezone: typeof timezone === "string" ? timezone : undefined,
             });
 
+            // Get selected model (default to big-pickle)
+            const selectedModel = ((await getConfig("model")) as ModelType) ||
+                "big-pickle";
+
             // Generate AI response
             logger.debug("Generating AI response", {
                 messageCount: messages.length,
+                model: selectedModel,
             });
 
-            const opencodeZen = getZenOpenAICompatible();
+            let model;
+            if (selectedModel === "gemini-3-pro") {
+                const google = getZenGoogle();
+                model = google("gemini-3-pro");
+            } else {
+                const opencodeZen = getZenOpenAICompatible();
+                model = opencodeZen("big-pickle");
+            }
+
             const result = await generateText({
-                model: opencodeZen("big-pickle"),
+                model,
                 messages: messages.map((msg) => ({
                     role: msg.role,
                     content: msg.content,

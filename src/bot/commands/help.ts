@@ -9,6 +9,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
 
 /start - Welcome message and introduction
 /help - Show this help message
+/models - View and change AI model
 
 More commands will be available as features are added:
 • Morning check-ins
@@ -20,4 +21,3 @@ For now, you can start by sending /start to begin!`;
 
     await ctx.reply(helpMessage);
 }
-
