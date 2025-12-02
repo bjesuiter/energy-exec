@@ -5,10 +5,14 @@ import type {
 } from "./interfaces";
 import { logTelegramMessage } from "./services/telegram-message-log";
 import { logger } from "./logger";
+import { buildPrompt } from "./ai/prompts";
+import { getConfig } from "./services/config";
+import { getOpencodeZen } from "./ai/providers";
+import { generateText } from "ai";
 
 /**
  * Default message handler implementation
- * Processes incoming messages and generates responses
+ * Processes incoming messages and generates responses using AI
  */
 export class DefaultMessageHandler implements MessageHandler {
     async handleMessage(
@@ -23,10 +27,33 @@ export class DefaultMessageHandler implements MessageHandler {
                 content: text,
             });
 
-            // For now, return a simple echo response
-            // This will be replaced with AI integration in Phase 4
-            const responseText =
-                `You said: "${text}"\n\nI'm still learning! More features coming soon.`;
+            // Get user timezone for context
+            const timezone = await getConfig("timezone");
+
+            // Build prompt with context
+            const messages = buildPrompt(text, {
+                timezone: typeof timezone === "string" ? timezone : undefined,
+            });
+
+            // Generate AI response
+            logger.debug("Generating AI response", {
+                messageCount: messages.length,
+            });
+
+            const opencodeZen = getOpencodeZen();
+            const result = await generateText({
+                model: opencodeZen("big-pickle"),
+                messages: messages.map((msg) => ({
+                    role: msg.role,
+                    content: msg.content,
+                })),
+            });
+
+            const responseText = result.text;
+
+            logger.debug("AI response generated", {
+                responseLength: responseText.length,
+            });
 
             // Log outgoing response
             await logTelegramMessage({
@@ -42,7 +69,21 @@ export class DefaultMessageHandler implements MessageHandler {
                 messageId: context.messageId,
                 error: error instanceof Error ? error.message : String(error),
             });
-            throw error; // Re-throw to let caller handle it
+
+            // Return a fallback message if AI fails
+            const fallbackMessage =
+                "Sorry, I'm having trouble processing your message right now. Please try again in a moment.";
+
+            // Log fallback response
+            await logTelegramMessage({
+                telegramMessageId: context.messageId + 1,
+                direction: "outgoing",
+                content: fallbackMessage,
+            }).catch(() => {
+                // Ignore logging errors for fallback
+            });
+
+            return { text: fallbackMessage };
         }
     }
 }
