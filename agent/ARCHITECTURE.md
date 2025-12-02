@@ -158,12 +158,12 @@ This document provides comprehensive context about the repository architecture, 
 │   ├── index.ts              # Entry point, starts Elysia + bot
 │   ├── server/
 │   │   └── index.ts          # Elysia server setup, routes
+│   ├── bot/
+│   │   ├── index.ts          # grammY bot initialization
+│   │   ├── commands/         # Command handlers (/start, /help, etc.)
+│   │   ├── conversations/    # Multi-step conversation flows
+│   │   └── middleware/       # Auth, logging, error handling
 │   └── lib/
-│       ├── bot/
-│       │   ├── index.ts      # grammY bot initialization
-│       │   ├── commands/     # Command handlers (/start, /help, etc.)
-│       │   ├── conversations/ # Multi-step conversation flows
-│       │   └── middleware/  # Auth, logging, error handling
 │       ├── ai/
 │       │   ├── client.ts     # Vercel AI SDK setup
 │       │   └── prompts/      # System prompts and prompt builders
