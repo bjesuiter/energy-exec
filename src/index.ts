@@ -1,11 +1,15 @@
 import { createServer } from "./server";
 import { bot } from "./bot";
 import { startBot } from "./bot/connection";
+import { runMigrations } from "./lib/db/migrate";
 
 const nodeEnv = process.env.NODE_ENV || "development";
 const port = parseInt(process.env.PORT || "3000", 10);
 
 async function main() {
+    // Run database migrations first
+    await runMigrations();
+
     // Create server with bot for webhook handling (production)
     const server = createServer(nodeEnv === "production" ? bot : undefined);
 
