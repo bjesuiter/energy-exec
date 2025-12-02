@@ -1,8 +1,12 @@
 import type { MyContext } from "../index";
-import { createOrUpdateDailyLog } from "@/src/lib/services/daily-log";
+import {
+    createOrUpdateDailyLog,
+    getDailyLog,
+} from "@/src/lib/services/daily-log";
 import { getConfig } from "@/src/lib/services/config";
 import { logger } from "@/src/lib/logger";
 import { format } from "date-fns";
+import { generateDayPlan } from "@/src/lib/services/planner";
 
 /**
  * Parses body battery value from text
@@ -123,10 +127,42 @@ export async function morningCheckinConversation(
             bodyBatteryStart,
         });
 
+        // Generate day plan
         await ctx.reply(
             `✅ Check-in complete! I've saved your information for today.\n\n` +
-                `Would you like me to generate a day plan based on your energy levels? Just send me a message and I'll help you plan your day!`,
+                `📋 Generating your personalized day plan...`,
         );
+
+        try {
+            // Get the updated daily log for plan generation
+            const updatedLog = await getDailyLog(today);
+            if (!updatedLog) {
+                throw new Error("Failed to retrieve daily log after creation");
+            }
+
+            // Generate plan
+            const plan = await generateDayPlan(updatedLog, timezone);
+
+            // Save plan to daily log
+            await createOrUpdateDailyLog(today, {
+                generatedPlan: plan,
+            });
+
+            // Send plan to user
+            await ctx.reply(
+                `📋 *Your Day Plan*\n\n${plan}`,
+                { parse_mode: "Markdown" },
+            );
+        } catch (error) {
+            logger.error("Failed to generate day plan", {
+                userId: ctx.from?.id,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            await ctx.reply(
+                `⚠️ I saved your check-in, but couldn't generate a day plan right now.\n\n` +
+                    `You can ask me to help plan your day anytime by sending me a message!`,
+            );
+        }
     } catch (error) {
         logger.error("Failed to complete morning check-in", {
             userId: ctx.from?.id,

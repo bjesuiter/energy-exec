@@ -115,11 +115,14 @@ This document provides comprehensive context about the repository architecture, 
 - [x] Load current day's log (if exists) for context
 - [ ] Load previous N days' summaries for patterns (start with 3-7 days)
 - [x] Craft prompt with user state + history + current request
-- [ ] Generate day plan with:
-  - Work blocks (1×90min, 2×45min, etc. based on energy)
+- [x] Generate day plan with:
+  - Work blocks (timing and duration based on energy)
   - Break scheduling
   - Tea/caffeine recommendations
   - Meeting/appointment integration
+  - Priority timing based on energy levels
+- [x] Auto-generate plan after morning check-in
+- [x] Store generated plan in daily_logs table
 - [ ] Handle plan adjustments (user sends update → regenerate)
 - [x] Format responses for Telegram (markdown, clear structure)
 - [ ] Add unit tests for planner logic (work blocks, breaks, timing)
