@@ -27,7 +27,7 @@ This document provides comprehensive context about the repository architecture, 
 | Server | Elysia |
 | Telegram | grammY |
 | AI | Vercel AI SDK v5 |
-| LLM Provider | opencode-zen (big-pickle / GLM 4.6) |
+| LLM Provider | opencode-zen (big-pickle / GLM 4.6) or Google AI (gemini-3-pro) |
 | Database | SQLite (Bun driver) |
 | ORM | Drizzle |
 | Deployment | Railway |
@@ -40,88 +40,88 @@ This document provides comprehensive context about the repository architecture, 
 
 ### Phase 0: Project Foundation
 
-- [ ] Initialize Bun project with `bun init`
-- [ ] Install core dependencies (elysia, grammy, drizzle-orm, ai)
-- [ ] Configure TypeScript (strict mode)
-- [ ] Set up folder structure (see System Architecture below)
-- [ ] Create `.env.example` with required environment variables
+- [x] Initialize Bun project with `bun init`
+- [x] Install core dependencies (elysia, grammy, drizzle-orm, ai, date-fns, date-fns-tz)
+- [x] Configure TypeScript (strict mode)
+- [x] Set up folder structure (see System Architecture below)
+- [x] Create `.env.example` with required environment variables
 - [ ] Add biome for linting/formatting
-- [ ] Set up bun:test with basic test structure
+- [x] Set up bun:test with basic test structure
 - [ ] Install drizzle-seed for test data seeding
 
 ### Phase 1: Database Setup
 
-- [ ] Configure Drizzle with Bun SQLite driver
-- [ ] Create schema: `config` table (key: string, value: JSON)
-- [ ] Create schema: `messages` table (raw message log)
-- [ ] Create schema: `daily_logs` table (structured daily summaries)
-- [ ] Set up Drizzle migrations
-- [ ] Create database helper functions (get/set config, log message, etc.)
-- [ ] Set up in-memory SQLite test helper
-- [ ] Add unit tests for database services
+- [x] Configure Drizzle with Bun SQLite driver
+- [x] Create schema: `config` table (key: string, value: JSON)
+- [x] Create schema: `messages` table (raw message log)
+- [x] Create schema: `daily_logs` table (structured daily summaries)
+- [x] Set up Drizzle migrations
+- [x] Create database helper functions (get/set config, log message, etc.)
+- [x] Set up in-memory SQLite test helper
+- [x] Add unit tests for database services
 
 ### Phase 2: Telegram Bot Core
 
-- [ ] Initialize grammY bot with token from environment
-- [ ] Implement user ID whitelist (single authorized user)
-- [ ] Add basic command handlers (`/start`, `/help`)
-- [ ] Set up Elysia server with health check endpoint
-- [ ] Configure connection mode based on `NODE_ENV`:
+- [x] Initialize grammY bot with token from environment
+- [x] Implement user ID whitelist (single authorized user)
+- [x] Add basic command handlers (`/start`, `/help`, `/models`, `/checkin`, `/reflect`, `/today`, `/viewDailyLog`)
+- [x] Set up Elysia server with health check endpoint
+- [x] Configure connection mode based on `NODE_ENV`:
   - Development: Long polling (no webhook needed)
   - Production: Webhook endpoint at `/webhook`
-- [ ] Error handling and logging
-- [ ] Create `MessageHandler` abstraction (Telegram-free interface)
-- [ ] Add unit tests for message handler with plain strings
+- [x] Error handling and logging
+- [x] Create `MessageHandler` abstraction (Telegram-free interface)
+- [x] Add unit tests for message handler with plain strings
 
 ### Phase 3: Onboarding Flow
 
-- [ ] Check if user is onboarded (timezone exists in config)
-- [ ] Create conversation flow using `@grammyjs/conversations`
-- [ ] Ask user for timezone (with examples/suggestions)
-- [ ] Validate and store timezone in config table
-- [ ] Confirmation message after successful onboarding
+- [x] Check if user is onboarded (timezone exists in config)
+- [x] Create conversation flow using `@grammyjs/conversations`
+- [x] Ask user for timezone (with examples/suggestions)
+- [x] Validate and store timezone in config table
+- [x] Confirmation message after successful onboarding
 
 ### Phase 4: AI Integration
 
-- [ ] Set up Vercel AI SDK v5
-- [ ] Configure opencode-zen as OpenAI-compatible provider
-- [ ] Set model to `big-pickle` (GLM 4.6)
-- [ ] Create base system prompt for energy-aware planning
-- [ ] Implement basic message → AI → response flow
-- [ ] Handle AI errors gracefully
-- [ ] Create `AIClient` interface for swappable implementations
-- [ ] Add mock AI client for testing
-- [ ] Add unit tests for prompt builder
+- [x] Set up Vercel AI SDK v5
+- [x] Configure opencode-zen as OpenAI-compatible provider
+- [x] Set model to `big-pickle` (GLM 4.6)
+- [x] Create base system prompt for energy-aware planning
+- [x] Implement basic message → AI → response flow
+- [x] Handle AI errors gracefully
+- [x] Support multiple AI providers (OpenAI-compatible and Google AI SDK)
+- [x] Model selection command (`/models`) to switch between providers
+- [x] Add unit tests for prompt builder
 
 ### Phase 5: Check-in Conversations
 
-- [ ] Design morning check-in conversation flow
+- [x] Design morning check-in conversation flow
   - Body battery value (number)
   - Sleep quality/deprivation (text)
   - Current feeling (motivation, joy, dizziness, etc.)
   - Most important task for today
   - Important appointments/meetings
-- [ ] Design evening reflection flow
+- [x] Design evening reflection flow
   - How did the day go?
-  - Any notes for tomorrow?
-- [ ] Implement mid-day update handling (free-form messages)
-- [ ] Store all check-in data in `daily_logs` table
-- [ ] Log raw messages to `messages` table
-- [ ] Add integration tests for conversation flows (mocked AI)
+  - Body battery end value (optional)
+  - Notes for tomorrow (optional)
+- [x] Implement mid-day update handling (free-form messages with daily log context)
+- [x] Store all check-in data in `daily_logs` table
+- [x] Log raw messages to `messages` table
 
 ### Phase 6: Intelligent Day Planning
 
 - [ ] Create `Clock` abstraction for injectable time (testability)
-- [ ] Load current day's log (if exists) for context
+- [x] Load current day's log (if exists) for context
 - [ ] Load previous N days' summaries for patterns (start with 3-7 days)
-- [ ] Craft prompt with user state + history + current request
+- [x] Craft prompt with user state + history + current request
 - [ ] Generate day plan with:
   - Work blocks (1×90min, 2×45min, etc. based on energy)
   - Break scheduling
   - Tea/caffeine recommendations
   - Meeting/appointment integration
 - [ ] Handle plan adjustments (user sends update → regenerate)
-- [ ] Format responses for Telegram (markdown, clear structure)
+- [x] Format responses for Telegram (markdown, clear structure)
 - [ ] Add unit tests for planner logic (work blocks, breaks, timing)
 
 ### Phase 7: Deployment
@@ -132,6 +132,7 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Configure Telegram webhook URL
 - [ ] Set up health check for Railway
 - [ ] Test end-to-end in production
+- [ ] Add integration tests for conversation flows (mocked AI)
 
 ### Phase 8: Post-MVP (Future)
 
@@ -165,8 +166,8 @@ This document provides comprehensive context about the repository architecture, 
 │   │   └── middleware/       # Auth, logging, error handling
 │   └── lib/
 │       ├── ai/
-│       │   ├── client.ts     # Vercel AI SDK setup
-│       │   └── prompts/      # System prompts and prompt builders
+│       │   ├── providers.ts  # AI provider setup (OpenAI-compatible, Google)
+│       │   └── prompts.ts    # System prompts and prompt builders
 │       ├── db/
 │       │   ├── index.ts      # Drizzle client
 │       │   ├── schema.ts     # Table definitions
@@ -208,7 +209,8 @@ This document provides comprehensive context about the repository architecture, 
 |--------|------|-------------|
 | id | INTEGER (PK) | Auto-increment ID |
 | date | TEXT | Date in YYYY-MM-DD format |
-| body_battery | INTEGER | Garmin body battery (0-100) |
+| body_battery_start | INTEGER | Garmin body battery start (0-100) |
+| body_battery_end | INTEGER | Garmin body battery end (0-100) |
 | sleep_notes | TEXT | Sleep quality/deprivation notes |
 | mood | JSON | Mood indicators (motivation, joy, etc.) |
 | priorities | JSON | Array of priorities/tasks |
@@ -227,7 +229,7 @@ This document provides comprehensive context about the repository architecture, 
 
 4. **Conversation-based check-ins**: grammY conversations plugin handles multi-step flows cleanly. Better UX than parsing free-form text.
 
-5. **OpenAI-compatible provider**: Vercel AI SDK's OpenAI adapter works with any compatible API. Easy to swap providers later.
+5. **Multiple AI providers**: Vercel AI SDK supports OpenAI-compatible providers (opencode-zen) and Google AI SDK. Users can switch between models via `/models` command.
 
 6. **SQLite + Railway volume**: Simple persistence. No external database service needed. SQLite handles single-user write patterns fine.
 
