@@ -10,6 +10,8 @@ import { getConfig } from "./services/config";
 import { getZenGoogle, getZenOpenAICompatible } from "./ai/providers";
 import { generateText } from "ai";
 import type { ModelType } from "@/src/bot/commands/models";
+import { createOrUpdateDailyLog, getDailyLog } from "./services/daily-log";
+import { format } from "date-fns";
 
 /**
  * Default message handler implementation
@@ -29,11 +31,23 @@ export class DefaultMessageHandler implements MessageHandler {
             });
 
             // Get user timezone for context
-            const timezone = await getConfig("timezone");
+            const timezone = (await getConfig("timezone")) as string | null;
 
-            // Build prompt with context
+            // Get today's date for loading daily log context
+            const now = timezone
+                ? new Date(
+                    new Date().toLocaleString("en-US", { timeZone: timezone }),
+                )
+                : new Date();
+            const today = format(now, "yyyy-MM-dd");
+
+            // Load today's daily log for context (if exists)
+            const todayLog = await getDailyLog(today);
+
+            // Build prompt with context (including today's log)
             const messages = buildPrompt(text, {
-                timezone: typeof timezone === "string" ? timezone : undefined,
+                timezone: timezone || undefined,
+                currentDayLog: todayLog || undefined,
             });
 
             // Get selected model (default to big-pickle)

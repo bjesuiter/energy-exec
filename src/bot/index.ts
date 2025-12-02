@@ -5,9 +5,13 @@ import { errorHandlerMiddleware } from "./middleware/error-handler";
 import { handleStart } from "./commands/start";
 import { handleHelp } from "./commands/help";
 import { handleModels, handleModelSelection } from "./commands/models";
+import { handleCheckin } from "./commands/checkin";
+import { handleReflect } from "./commands/reflect";
 import { DefaultMessageHandler } from "@/src/lib/message-handler";
 import { logger } from "@/src/lib/logger";
 import { onboardingConversation } from "./conversations/onboarding";
+import { morningCheckinConversation } from "./conversations/morning-checkin";
+import { eveningReflectionConversation } from "./conversations/evening-reflection";
 import { createConversation } from "@grammyjs/conversations";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -31,13 +35,17 @@ bot.use(errorHandlerMiddleware);
 // Apply auth middleware
 bot.use(authMiddleware);
 
-// Register onboarding conversation
+// Register conversations
 bot.use(createConversation(onboardingConversation));
+bot.use(createConversation(morningCheckinConversation));
+bot.use(createConversation(eveningReflectionConversation));
 
 // Command handlers
 bot.command("start", handleStart);
 bot.command("help", handleHelp);
 bot.command("models", handleModels);
+bot.command("checkin", handleCheckin);
+bot.command("reflect", handleReflect);
 
 // Handle text messages (non-commands)
 bot.on("message:text", async (ctx) => {
