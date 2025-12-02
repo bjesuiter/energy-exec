@@ -23,6 +23,13 @@ export async function handleToday(ctx: MyContext): Promise<void> {
         // Get daily log
         const dailyLog = await getDailyLog(today);
 
+        logger.debug("Retrieved daily log for /today", {
+            userId: ctx.from?.id,
+            date: today,
+            hasPlan: !!dailyLog?.generatedPlan,
+            planLength: dailyLog?.generatedPlan?.length || 0,
+        });
+
         if (!dailyLog) {
             await ctx.reply(
                 `📅 *No log found for today (${formattedDate})*\n\n` +

@@ -10,11 +10,11 @@ import { handleReflect } from "./commands/reflect";
 import { handleViewDailyLog } from "./commands/viewDailyLog";
 import { handleToday } from "./commands/today";
 import { handleUpdatePlan } from "./commands/updatePlan";
-import { DefaultMessageHandler } from "@/src/lib/message-handler";
 import { logger } from "@/src/lib/logger";
 import { onboardingConversation } from "./conversations/onboarding";
 import { morningCheckinConversation } from "./conversations/morning-checkin";
 import { eveningReflectionConversation } from "./conversations/evening-reflection";
+import { updatePlanConversation } from "./conversations/update-plan";
 import { createConversation } from "@grammyjs/conversations";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -29,9 +29,6 @@ export const bot = new Bot<MyContext>(token);
 // Install conversations plugin
 bot.use(conversations());
 
-// Initialize message handler
-const messageHandler = new DefaultMessageHandler();
-
 // Apply error handling middleware first (catches all errors)
 bot.use(errorHandlerMiddleware);
 
@@ -42,6 +39,7 @@ bot.use(authMiddleware);
 bot.use(createConversation(onboardingConversation));
 bot.use(createConversation(morningCheckinConversation));
 bot.use(createConversation(eveningReflectionConversation));
+bot.use(createConversation(updatePlanConversation));
 
 // Command handlers
 bot.command("start", handleStart);
@@ -54,32 +52,30 @@ bot.command("today", handleToday);
 bot.command("updatePlan", handleUpdatePlan);
 
 // Handle text messages (non-commands)
+// Only process model selection outside of conversations
+// All other messages are handled within conversation flows
 bot.on("message:text", async (ctx) => {
     try {
-        logger.debug("Received text message", {
+        // Check if this is a model selection
+        const handled = await handleModelSelection(ctx, ctx.message.text);
+        if (handled) {
+            return; // Model selection was handled
+        }
+
+        // If not a model selection and not in a conversation, ignore the message
+        // Conversations handle their own messages via conversation.waitFor()
+        // We don't send plain messages to LLM anymore - only within conversation flows
+        logger.debug("Received text message outside of conversation", {
             userId: ctx.from.id,
             messageId: ctx.message.message_id,
             textLength: ctx.message.text.length,
         });
 
-        // Check if this is a model selection first
-        const handled = await handleModelSelection(ctx, ctx.message.text);
-        if (handled) {
-            return; // Model selection was handled, don't process as regular message
-        }
-
-        const response = await messageHandler.handleMessage(ctx.message.text, {
-            userId: ctx.from.id,
-            messageId: ctx.message.message_id,
-            timestamp: ctx.message.date * 1000, // Convert to milliseconds
-        });
-
-        await ctx.reply(response.text);
-
-        logger.debug("Sent response", {
-            userId: ctx.from.id,
-            responseLength: response.text.length,
-        });
+        // Reply with a helpful message
+        await ctx.reply(
+            `💬 I can only process messages within conversation flows.\n\n` +
+                `Use /checkin, /reflect, or /updatePlan to start a conversation.`,
+        );
     } catch (error) {
         // Error handler middleware will catch this, but log here for context
         logger.error("Failed to handle text message", {
