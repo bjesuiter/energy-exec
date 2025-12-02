@@ -12,6 +12,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
 /models - View and change AI model
 /checkin - Start morning check-in (body battery, sleep, mood, priorities)
 /reflect - Start evening reflection (how the day went, notes for tomorrow)
+/today - View today's daily log in a nice format
 /viewDailyLog [YYYY-MM-DD] - View daily log for a date (defaults to today)
 
 Daily Flow:

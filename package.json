@@ -17,6 +17,7 @@
         "@grammyjs/conversations": "^2.1.1",
         "ai": "^5.0.106",
         "date-fns": "^4.1.0",
+        "date-fns-tz": "^3.2.0",
         "drizzle-orm": "^0.44.7",
         "elysia": "^1.1.0",
         "grammy": "^1.24.0"
