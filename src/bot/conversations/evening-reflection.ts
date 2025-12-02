@@ -6,6 +6,7 @@ import {
 import { getConfig } from "@/src/lib/services/config";
 import { logger } from "@/src/lib/logger";
 import { formatInTimeZone } from "date-fns-tz";
+import { generatePlanReview } from "@/src/lib/services/planner";
 
 /**
  * Evening reflection conversation flow
@@ -93,10 +94,45 @@ export async function eveningReflectionConversation(
             bodyBatteryEnd,
         });
 
-        await ctx.reply(
-            `✅ Reflection saved! Thank you for sharing.\n\n` +
-                `Have a good rest, and I'll see you tomorrow for your morning check-in! 🌙`,
-        );
+        // Generate AI review of plan and suggestions for tomorrow
+        try {
+            await ctx.reply(
+                `✅ Reflection saved! Thank you for sharing.\n\n` +
+                    `🤖 Generating an AI review of your plan and suggestions for tomorrow...`,
+            );
+
+            // Get the updated daily log with reflections
+            const updatedLog = await getDailyLog(today);
+            if (!updatedLog) {
+                throw new Error("Failed to retrieve daily log after update");
+            }
+
+            // Generate review if there's a plan to review
+            if (updatedLog.generatedPlan) {
+                const review = await generatePlanReview(updatedLog, timezone);
+
+                await ctx.reply(
+                    `📊 *Plan Review & Suggestions for Tomorrow*\n\n${review}\n\n` +
+                        `Have a good rest, and I'll see you tomorrow for your morning check-in! 🌙`,
+                    { parse_mode: "Markdown" },
+                );
+            } else {
+                await ctx.reply(
+                    `ℹ️ No plan was generated for today, so I can't provide a review.\n\n` +
+                        `Have a good rest, and I'll see you tomorrow for your morning check-in! 🌙`,
+                );
+            }
+        } catch (error) {
+            logger.error("Failed to generate plan review", {
+                userId: ctx.from?.id,
+                error: error instanceof Error ? error.message : String(error),
+            });
+            await ctx.reply(
+                `✅ Reflection saved! Thank you for sharing.\n\n` +
+                    `⚠️ I couldn't generate a review right now, but your reflection has been saved.\n\n` +
+                    `Have a good rest, and I'll see you tomorrow for your morning check-in! 🌙`,
+            );
+        }
     } catch (error) {
         logger.error("Failed to complete evening reflection", {
             userId: ctx.from?.id,

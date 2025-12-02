@@ -64,7 +64,11 @@ export async function handleViewDailyLog(ctx: MyContext): Promise<void> {
         }
 
         // Format the log nicely - display in user's timezone
-        const formattedDate = formatInTimeZone(targetDate, tz, "EEEE, MMMM d, yyyy");
+        const formattedDate = formatInTimeZone(
+            targetDate,
+            tz,
+            "EEEE, MMMM d, yyyy",
+        );
         let message = `📅 Daily Log: ${formattedDate}\n\n`;
 
         // Body Battery
