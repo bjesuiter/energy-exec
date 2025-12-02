@@ -5,7 +5,7 @@ import {
 } from "@/src/lib/services/daily-log";
 import { getConfig } from "@/src/lib/services/config";
 import { logger } from "@/src/lib/logger";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { generateDayPlan } from "@/src/lib/services/planner";
 
 /**
@@ -28,14 +28,11 @@ export async function morningCheckinConversation(
     ctx: MyContext,
 ): Promise<void> {
     try {
-        // Get user's timezone for date calculation
+        // Get user's timezone for display (dates stored in UTC)
         const timezone = (await getConfig("timezone")) as string | null;
-        const now = timezone
-            ? new Date(
-                new Date().toLocaleString("de-DE", { timeZone: timezone }),
-            )
-            : new Date();
-        const today = format(now, "yyyy-MM-dd");
+        // Store date in UTC for consistency
+        const now = new Date();
+        const today = formatInTimeZone(now, "UTC", "yyyy-MM-dd");
 
         await ctx.reply(
             `🌅 Good morning! Let's start your day with a quick check-in.\n\n` +

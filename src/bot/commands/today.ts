@@ -10,13 +10,14 @@ import { logger } from "@/src/lib/logger";
  */
 export async function handleToday(ctx: MyContext): Promise<void> {
     try {
-        // Get user's timezone for date calculation
+        // Get user's timezone for display (dates stored in UTC)
         const timezone = (await getConfig("timezone")) as string | null;
         const tz = timezone || "UTC";
 
-        // Get today's date using timezone-aware formatting
+        // Get today's date in UTC for database lookup (same as check-in)
         const now = new Date();
         const today = formatInTimeZone(now, "UTC", "yyyy-MM-dd");
+        // Format date for display in user's timezone
         const formattedDate = formatInTimeZone(now, tz, "EEEE, MMMM d, yyyy");
 
         // Get daily log

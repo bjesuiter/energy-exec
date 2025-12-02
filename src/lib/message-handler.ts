@@ -1,17 +1,17 @@
+import type { ModelType } from "@/src/bot/commands/models";
+import { generateText } from "ai";
+import { formatInTimeZone } from "date-fns-tz";
+import { buildPrompt } from "./ai/prompts";
+import { getZenGoogle, getZenOpenAICompatible } from "./ai/providers";
 import type {
     MessageContext,
     MessageHandler,
     MessageResponse,
 } from "./interfaces";
-import { logTelegramMessage } from "./services/telegram-message-log";
 import { logger } from "./logger";
-import { buildPrompt } from "./ai/prompts";
 import { getConfig } from "./services/config";
-import { getZenGoogle, getZenOpenAICompatible } from "./ai/providers";
-import { generateText } from "ai";
-import type { ModelType } from "@/src/bot/commands/models";
-import { createOrUpdateDailyLog, getDailyLog } from "./services/daily-log";
-import { format } from "date-fns";
+import { getDailyLog } from "./services/daily-log";
+import { logTelegramMessage } from "./services/telegram-message-log";
 
 /**
  * Default message handler implementation
@@ -33,13 +33,9 @@ export class DefaultMessageHandler implements MessageHandler {
             // Get user timezone for context
             const timezone = (await getConfig("timezone")) as string | null;
 
-            // Get today's date for loading daily log context
-            const now = timezone
-                ? new Date(
-                    new Date().toLocaleString("en-US", { timeZone: timezone }),
-                )
-                : new Date();
-            const today = format(now, "yyyy-MM-dd");
+            // Get today's date in UTC for database lookup (dates stored in UTC)
+            const now = new Date();
+            const today = formatInTimeZone(now, "UTC", "yyyy-MM-dd");
 
             // Load today's daily log for context (if exists)
             const todayLog = await getDailyLog(today);

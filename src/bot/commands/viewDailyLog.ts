@@ -2,6 +2,7 @@ import type { MyContext } from "../index";
 import { getDailyLog } from "@/src/lib/services/daily-log";
 import { getConfig } from "@/src/lib/services/config";
 import { format, parse } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { logger } from "@/src/lib/logger";
 
 /**
@@ -11,8 +12,9 @@ import { logger } from "@/src/lib/logger";
  */
 export async function handleViewDailyLog(ctx: MyContext): Promise<void> {
     try {
-        // Get user's timezone for date calculation
+        // Get user's timezone for display (dates stored in UTC)
         const timezone = (await getConfig("timezone")) as string | null;
+        const tz = timezone || "UTC";
 
         // Parse date parameter if provided
         const commandText = ctx.message?.text || "";
@@ -34,7 +36,8 @@ export async function handleViewDailyLog(ctx: MyContext): Promise<void> {
                     return;
                 }
                 targetDate = parsed;
-                dateString = format(targetDate, "yyyy-MM-dd");
+                // Use UTC for database lookup
+                dateString = formatInTimeZone(targetDate, "UTC", "yyyy-MM-dd");
             } catch (error) {
                 await ctx.reply(
                     `❌ Invalid date format. Please use YYYY-MM-DD format.\n\n` +
@@ -43,13 +46,10 @@ export async function handleViewDailyLog(ctx: MyContext): Promise<void> {
                 return;
             }
         } else {
-            // Default to today
-            targetDate = timezone
-                ? new Date(
-                    new Date().toLocaleString("de-DE", { timeZone: timezone }),
-                )
-                : new Date();
-            dateString = format(targetDate, "yyyy-MM-dd");
+            // Default to today - use UTC for database lookup
+            const now = new Date();
+            targetDate = now;
+            dateString = formatInTimeZone(now, "UTC", "yyyy-MM-dd");
         }
 
         // Get daily log
@@ -63,8 +63,8 @@ export async function handleViewDailyLog(ctx: MyContext): Promise<void> {
             return;
         }
 
-        // Format the log nicely
-        const formattedDate = format(targetDate, "EEEE, MMMM d, yyyy");
+        // Format the log nicely - display in user's timezone
+        const formattedDate = formatInTimeZone(targetDate, tz, "EEEE, MMMM d, yyyy");
         let message = `📅 Daily Log: ${formattedDate}\n\n`;
 
         // Body Battery

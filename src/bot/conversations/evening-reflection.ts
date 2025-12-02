@@ -5,7 +5,7 @@ import {
 } from "@/src/lib/services/daily-log";
 import { getConfig } from "@/src/lib/services/config";
 import { logger } from "@/src/lib/logger";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 /**
  * Evening reflection conversation flow
@@ -16,14 +16,11 @@ export async function eveningReflectionConversation(
     ctx: MyContext,
 ): Promise<void> {
     try {
-        // Get user's timezone for date calculation
+        // Get user's timezone for display (dates stored in UTC)
         const timezone = (await getConfig("timezone")) as string | null;
-        const now = timezone
-            ? new Date(
-                new Date().toLocaleString("en-US", { timeZone: timezone }),
-            )
-            : new Date();
-        const today = format(now, "yyyy-MM-dd");
+        // Store date in UTC for consistency
+        const now = new Date();
+        const today = formatInTimeZone(now, "UTC", "yyyy-MM-dd");
 
         // Check if there's a daily log for today
         const existingLog = await getDailyLog(today);
