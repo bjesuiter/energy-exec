@@ -64,7 +64,7 @@ This document provides comprehensive context about the repository architecture, 
 
 - [x] Initialize grammY bot with token from environment
 - [x] Implement user ID whitelist (single authorized user)
-- [x] Add basic command handlers (`/start`, `/help`, `/models`, `/checkin`, `/reflect`, `/today`, `/viewDailyLog`)
+- [x] Add basic command handlers (`/start`, `/help`, `/models`, `/checkin`, `/reflect`, `/today`, `/viewDailyLog`, `/updatePlan`)
 - [x] Set up Elysia server with health check endpoint
 - [x] Configure connection mode based on `NODE_ENV`:
   - Development: Long polling (no webhook needed)
@@ -123,7 +123,7 @@ This document provides comprehensive context about the repository architecture, 
   - Priority timing based on energy levels
 - [x] Auto-generate plan after morning check-in
 - [x] Store generated plan in daily_logs table
-- [ ] Handle plan adjustments (user sends update → regenerate)
+- [x] Handle plan adjustments (user sends update → regenerate) via `/updatePlan` conversation flow
 - [x] Format responses for Telegram (markdown, clear structure)
 - [ ] Add unit tests for planner logic (work blocks, breaks, timing)
 
