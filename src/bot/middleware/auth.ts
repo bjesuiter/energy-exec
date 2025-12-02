@@ -1,4 +1,5 @@
-import { Context, NextFunction } from "grammy";
+import { NextFunction } from "grammy";
+import type { MyContext } from "../index";
 
 const authorizedUserId = process.env.AUTHORIZED_USER_ID;
 if (!authorizedUserId) {
@@ -15,7 +16,7 @@ if (isNaN(authorizedUserIdNum)) {
  * Only allows messages from the authorized user ID
  */
 export async function authMiddleware(
-    ctx: Context,
+    ctx: MyContext,
     next: NextFunction,
 ): Promise<void> {
     // Early return if user ID cannot be identified

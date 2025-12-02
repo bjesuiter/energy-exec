@@ -1,11 +1,12 @@
-import { Context, NextFunction } from "grammy";
+import { NextFunction } from "grammy";
+import type { MyContext } from "../index";
 
 /**
  * Error handling middleware for the bot
  * Catches errors and logs them, then sends a user-friendly error message
  */
 export async function errorHandlerMiddleware(
-    ctx: Context,
+    ctx: MyContext,
     next: NextFunction,
 ): Promise<void> {
     try {

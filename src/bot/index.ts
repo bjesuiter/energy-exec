@@ -1,25 +1,37 @@
-import { Bot } from "grammy";
+import { Bot, Context } from "grammy";
+import { ConversationFlavor, conversations } from "@grammyjs/conversations";
 import { authMiddleware } from "./middleware/auth";
 import { errorHandlerMiddleware } from "./middleware/error-handler";
 import { handleStart } from "./commands/start";
 import { handleHelp } from "./commands/help";
 import { DefaultMessageHandler } from "@/src/lib/message-handler";
 import { logger } from "@/src/lib/logger";
+import { onboardingConversation } from "./conversations/onboarding";
+import { createConversation } from "@grammyjs/conversations";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
     throw new Error("TELEGRAM_BOT_TOKEN environment variable is required");
 }
 
-export const bot = new Bot(token);
+// Create bot with conversation flavor
+export type MyContext = Context & ConversationFlavor<Context>;
+export const bot = new Bot<MyContext>(token);
+
+// Install conversations plugin
+bot.use(conversations());
 
 // Initialize message handler
 const messageHandler = new DefaultMessageHandler();
-// Apply auth middleware
-bot.use(authMiddleware);
 
 // Apply error handling middleware first (catches all errors)
 bot.use(errorHandlerMiddleware);
+
+// Apply auth middleware
+bot.use(authMiddleware);
+
+// Register onboarding conversation
+bot.use(createConversation(onboardingConversation));
 
 // Command handlers
 bot.command("start", handleStart);
