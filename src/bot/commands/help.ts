@@ -14,6 +14,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
 /reflect - Start evening reflection (how the day went, notes for tomorrow)
 /today - View today's daily log in a nice format
 /viewDailyLog [YYYY-MM-DD] - View daily log for a date (defaults to today)
+/updatePlan [message] - Update your day plan based on changes (shows diff, regenerates plan)
 
 Daily Flow:
 • Morning: Use /checkin to log your energy levels and priorities

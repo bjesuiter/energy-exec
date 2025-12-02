@@ -9,6 +9,7 @@ import { handleCheckin } from "./commands/checkin";
 import { handleReflect } from "./commands/reflect";
 import { handleViewDailyLog } from "./commands/viewDailyLog";
 import { handleToday } from "./commands/today";
+import { handleUpdatePlan } from "./commands/updatePlan";
 import { DefaultMessageHandler } from "@/src/lib/message-handler";
 import { logger } from "@/src/lib/logger";
 import { onboardingConversation } from "./conversations/onboarding";
@@ -50,6 +51,7 @@ bot.command("checkin", handleCheckin);
 bot.command("reflect", handleReflect);
 bot.command("viewDailyLog", handleViewDailyLog);
 bot.command("today", handleToday);
+bot.command("updatePlan", handleUpdatePlan);
 
 // Handle text messages (non-commands)
 bot.on("message:text", async (ctx) => {

@@ -10,15 +10,17 @@ import type { DailyLog } from "../db";
  * Generate a day plan based on check-in data
  * @param dailyLog The daily log with check-in information
  * @param timezone User's timezone
+ * @param updateContext Optional context about what changed (for plan updates)
  * @returns Generated day plan text
  */
 export async function generateDayPlan(
     dailyLog: DailyLog,
     timezone?: string | null,
+    updateContext?: string,
 ): Promise<string> {
     try {
         // Build a specific prompt for plan generation
-        const planPrompt =
+        let planPrompt =
             `Based on my morning check-in, generate a structured day plan for me. 
 
 Consider:
@@ -44,9 +46,14 @@ Consider:
                         ? dailyLog.appointments.join(", ")
                         : String(dailyLog.appointments))
                     : "none"
-            }
+            }`;
 
-Please create a day plan that includes:
+        // Add update context if provided
+        if (updateContext) {
+            planPrompt += `\n\nImportant update: ${updateContext}`;
+        }
+
+        planPrompt += `\n\nPlease create a day plan that includes:
 1. Suggested work blocks (timing and duration based on energy levels)
 2. Break times
 3. Tea/caffeine recommendations with timing
