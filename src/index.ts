@@ -12,6 +12,14 @@ async function main() {
         // Run database migrations first
         await runMigrations();
 
+        // In production, initialize bot before starting server to handle webhooks
+        // In development, bot will be started with long polling after server starts
+        if (nodeEnv === "production") {
+            logger.info("🔧 Initializing bot for production...");
+            await bot.init();
+            logger.info("✅ Bot initialized");
+        }
+
         // Create server with bot for webhook handling (production)
         const server = createServer(nodeEnv === "production" ? bot : undefined);
 

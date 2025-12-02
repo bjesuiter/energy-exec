@@ -2,12 +2,13 @@ import { Elysia } from "elysia";
 import packageJson from "@/package.json";
 import type { Bot } from "grammy";
 import { logger } from "@/src/lib/logger";
+import type { MyContext } from "@/src/bot";
 
 /**
  * Create and configure Elysia server
  * @param bot Optional grammY bot instance for webhook handling
  */
-export function createServer(bot?: Bot) {
+export function createServer(bot?: Bot<MyContext>) {
     const app = new Elysia()
         .get("/health", () => {
             return {
@@ -35,7 +36,9 @@ export function createServer(bot?: Bot) {
                 return { ok: true };
             } catch (error) {
                 logger.error("Webhook handler error", {
-                    error: error instanceof Error ? error.message : String(error),
+                    error: error instanceof Error
+                        ? error.message
+                        : String(error),
                     stack: error instanceof Error ? error.stack : undefined,
                 });
                 // Return error response to Telegram

@@ -35,6 +35,7 @@ export async function setupWebhook(): Promise<void> {
     }
 
     try {
+        // Bot should already be initialized in main() before this is called
         logger.info("🔗 Setting up webhook", { webhookUrl });
         await bot.api.setWebhook(webhookUrl);
         logger.info("✅ Webhook configured successfully");
