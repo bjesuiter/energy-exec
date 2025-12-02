@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "b6e065c9-ad99-4436-9562-cf28391750ad",
+  "id": "b667ebf9-d821-4401-abbd-2f34f3e6ece3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "config": {
@@ -52,8 +52,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "body_battery": {
-          "name": "body_battery",
+        "body_battery_start": {
+          "name": "body_battery_start",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "body_battery_end": {
+          "name": "body_battery_end",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -109,7 +116,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "daily_logs_date_unique": {
+          "name": "daily_logs_date_unique",
+          "columns": [
+            "date"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},

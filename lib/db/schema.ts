@@ -20,8 +20,9 @@ export const messages = sqliteTable("messages", {
 // Daily logs table for structured daily summaries
 export const dailyLogs = sqliteTable("daily_logs", {
     id: integer("id").primaryKey({ autoIncrement: true }),
-    date: text("date").notNull(), // YYYY-MM-DD format
-    bodyBattery: integer("body_battery"), // 0-100, nullable
+    date: text("date").notNull().unique(), // YYYY-MM-DD format, unique (one log per day)
+    bodyBatteryStart: integer("body_battery_start"), // 0-100, nullable
+    bodyBatteryEnd: integer("body_battery_end"), // 0-100, nullable
     sleepNotes: text("sleep_notes"), // nullable
     mood: text("mood", { mode: "json" }).$type<JsonValue>(), // JSON object, nullable
     priorities: text("priorities", { mode: "json" }).$type<JsonValue>(), // JSON array, nullable

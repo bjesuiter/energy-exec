@@ -7,7 +7,8 @@ CREATE TABLE `config` (
 CREATE TABLE `daily_logs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`date` text NOT NULL,
-	`body_battery` integer,
+	`body_battery_start` integer,
+	`body_battery_end` integer,
 	`sleep_notes` text,
 	`mood` text,
 	`priorities` text,
@@ -17,6 +18,7 @@ CREATE TABLE `daily_logs` (
 	`updated_at` integer NOT NULL
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `daily_logs_date_unique` ON `daily_logs` (`date`);--> statement-breakpoint
 CREATE TABLE `messages` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`telegram_message_id` integer NOT NULL,
