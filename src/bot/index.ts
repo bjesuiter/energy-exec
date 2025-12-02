@@ -10,6 +10,7 @@ import { handleReflect } from "./commands/reflect";
 import { handleViewDailyLog } from "./commands/viewDailyLog";
 import { handleToday } from "./commands/today";
 import { handleUpdatePlan } from "./commands/updatePlan";
+import { handlePlanReview } from "./commands/planReview";
 import { logger } from "@/src/lib/logger";
 import { onboardingConversation } from "./conversations/onboarding";
 import { morningCheckinConversation } from "./conversations/morning-checkin";
@@ -50,6 +51,7 @@ bot.command("reflect", handleReflect);
 bot.command("viewDailyLog", handleViewDailyLog);
 bot.command("today", handleToday);
 bot.command("updatePlan", handleUpdatePlan);
+bot.command("planReview", handlePlanReview);
 
 // Handle text messages (non-commands)
 // Only process model selection outside of conversations
