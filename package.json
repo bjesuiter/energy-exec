@@ -12,8 +12,8 @@
         "test": "bun test"
     },
     "dependencies": {
+        "@ai-sdk/google": "^2.0.44",
         "@ai-sdk/openai-compatible": "^1.0.28",
-        "@ai-sdk/google": "2.0.23",
         "@grammyjs/conversations": "^2.1.1",
         "ai": "^5.0.106",
         "date-fns": "^4.1.0",

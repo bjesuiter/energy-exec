@@ -7,7 +7,7 @@ import { logTelegramMessage } from "./services/telegram-message-log";
 import { logger } from "./logger";
 import { buildPrompt } from "./ai/prompts";
 import { getConfig } from "./services/config";
-import { getOpencodeZen } from "./ai/providers";
+import { getZenOpenAICompatible } from "./ai/providers";
 import { generateText } from "ai";
 
 /**
@@ -40,7 +40,7 @@ export class DefaultMessageHandler implements MessageHandler {
                 messageCount: messages.length,
             });
 
-            const opencodeZen = getOpencodeZen();
+            const opencodeZen = getZenOpenAICompatible();
             const result = await generateText({
                 model: opencodeZen("big-pickle"),
                 messages: messages.map((msg) => ({

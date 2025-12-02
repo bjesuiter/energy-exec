@@ -17,7 +17,7 @@ mock.module("@/src/lib/services/config", () => ({
 
 // Mock the AI providers
 mock.module("@/src/lib/ai/providers", () => ({
-    getOpencodeZen: mock(() => {
+    getZenOpenAICompatible: mock(() => {
         // Return a function that can be called with model name
         return mock(() => ({}));
     }),
