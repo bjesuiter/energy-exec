@@ -1,4 +1,5 @@
 import { bot } from "./index";
+import { logger } from "@/src/lib/logger";
 
 const nodeEnv = process.env.NODE_ENV || "development";
 const webhookUrl = process.env.WEBHOOK_URL;
@@ -7,9 +8,16 @@ const webhookUrl = process.env.WEBHOOK_URL;
  * Start the bot using long polling (for development)
  */
 export async function startLongPolling(): Promise<void> {
-    console.log("🔄 Starting bot with long polling (development mode)");
-    await bot.start();
-    console.log("✅ Bot is running with long polling");
+    try {
+        logger.info("🔄 Starting bot with long polling (development mode)");
+        await bot.start();
+        logger.info("✅ Bot is running with long polling");
+    } catch (error) {
+        logger.error("Failed to start bot with long polling", {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+    }
 }
 
 /**
@@ -17,14 +25,26 @@ export async function startLongPolling(): Promise<void> {
  */
 export async function setupWebhook(): Promise<void> {
     if (!webhookUrl) {
-        throw new Error(
+        const error = new Error(
             "WEBHOOK_URL environment variable is required for production mode",
         );
+        logger.error("Webhook setup failed", {
+            error: error.message,
+        });
+        throw error;
     }
 
-    console.log(`🔗 Setting up webhook: ${webhookUrl}`);
-    await bot.api.setWebhook(webhookUrl);
-    console.log("✅ Webhook configured successfully");
+    try {
+        logger.info("🔗 Setting up webhook", { webhookUrl });
+        await bot.api.setWebhook(webhookUrl);
+        logger.info("✅ Webhook configured successfully");
+    } catch (error) {
+        logger.error("Failed to set up webhook", {
+            webhookUrl,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+    }
 }
 
 /**
@@ -33,9 +53,17 @@ export async function setupWebhook(): Promise<void> {
  * - Production: Webhook (requires WEBHOOK_URL)
  */
 export async function startBot(): Promise<void> {
-    if (nodeEnv === "production") {
-        await setupWebhook();
-    } else {
-        await startLongPolling();
+    try {
+        if (nodeEnv === "production") {
+            await setupWebhook();
+        } else {
+            await startLongPolling();
+        }
+    } catch (error) {
+        logger.error("Failed to start bot", {
+            nodeEnv,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
     }
 }
