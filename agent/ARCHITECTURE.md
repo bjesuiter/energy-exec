@@ -141,7 +141,7 @@ This document provides comprehensive context about the repository architecture, 
 ### Phase 7.5: Schema Migration (Facts-Based Architecture)
 
 - [ ] Create `daily_facts` table with migration
-- [ ] Create `day_plans` table with migration
+- [ ] Create `daily_plans` table with migration
 - [ ] Update `daily-log.ts` service to use facts-based storage
 - [ ] Update `planner.ts` to query facts and store plans separately
 - [ ] Rename `/planReview` command to `/insights`
@@ -240,7 +240,7 @@ This document provides comprehensive context about the repository architecture, 
 - Simple LLM context building (`SELECT * FROM daily_facts WHERE date = ?`)
 - Natural temporal ordering via `created_at`
 
-#### `day_plans` Table (Append-Only)
+#### `daily_plans` Table (Append-Only)
 | Column | Type | Description |
 |--------|------|-------------|
 | id | INTEGER (PK) | Auto-increment ID |
@@ -252,11 +252,11 @@ This document provides comprehensive context about the repository architecture, 
 - Facts = inputs/observations (what the user tells us)
 - Plans = outputs (what the LLM generates)
 - Multiple rows per day preserve plan history (plan evolved 3 times today)
-- Latest plan: `SELECT * FROM day_plans WHERE date = ? ORDER BY created_at DESC LIMIT 1`
-- All plans for review: `SELECT * FROM day_plans WHERE date = ? ORDER BY created_at`
+- Latest plan: `SELECT * FROM daily_plans WHERE date = ? ORDER BY created_at DESC LIMIT 1`
+- All plans for review: `SELECT * FROM daily_plans WHERE date = ? ORDER BY created_at`
 
 #### `daily_logs` Table (DEPRECATED)
-> **Note:** This table is being replaced by `daily_facts` + `day_plans`. Kept temporarily for migration.
+> **Note:** This table is being replaced by `daily_facts` + `daily_plans`. Kept temporarily for migration.
 
 | Column | Type | Description |
 |--------|------|-------------|
@@ -317,7 +317,7 @@ The `/insights` command provides an end-of-day analysis:
 
 **Input data:**
 - All "reflection" type facts for today
-- All plan versions for today (from `day_plans` table)
+- All plan versions for today (from `daily_plans` table)
 - Body battery facts (start/end)
 
 **Output:**
@@ -378,12 +378,12 @@ Example flow:
 │    from yesterday     │           │    for today          │
 │ 3. Build prompt       │           │ 3. Generate analysis  │
 │ 4. Call LLM           │           │ 4. Store insights as  │
-│ 5. Store in day_plans │           │    facts for tomorrow │
+│ 5. Store in daily_plans │           │    facts for tomorrow │
 └───────────────────────┘           └───────────────────────┘
             │
             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                       day_plans table                            │
+│                       daily_plans table                            │
 │   ┌──────────┬───────────────────────────────┬────────────────┐ │
 │   │ date     │ plan_text                     │ created_at     │ │
 │   ├──────────┼───────────────────────────────┼────────────────┤ │
@@ -550,7 +550,7 @@ The MVP includes Phases 0-7. The goal is a working bot that:
 ### Pending Migrations
 
 > **Note:** The codebase currently uses the old `daily_logs` table. The following files need updating for the facts-based architecture:
-> - `src/lib/db/schema.ts` — Add `daily_facts` and `day_plans` tables
+> - `src/lib/db/schema.ts` — Add `daily_facts` and `daily_plans` tables
 > - `src/lib/services/daily-log.ts` — Refactor to facts-based queries
 > - `src/lib/services/planner.ts` — Update to query facts, store plans separately
 > - `src/bot/commands/planReview.ts` — Rename to `insights.ts`, implement new logic
