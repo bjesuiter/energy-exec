@@ -4,6 +4,16 @@ This document provides comprehensive context about the repository architecture, 
 
 ---
 
+## Next Todos
+
+1. **Fix issue with review command**: If using "date now" for storing the review, it gets assigned to the wrong date when it's already after 0 in the night. Logic: if current day log has no checkin entry and yesterday has no review, assign the current review to yesterday instead of today.
+
+2. **Add requestDate variable**: For point 1, we need to make the bot able to use a "requestDate" variable for requests/conversations, otherwise it uses "date now" everywhere. This requestDate should be calculated once at the start of the `/reflect` conversation for now, since the other commands are not affected by it.
+
+3. **Add date selection to /planReview**: `/planReview` should have a date selection built-in. Use today per default, except if today has no checkin and review (again: after 0 issue) - then tell that to the user and output the plan review for the previous day.
+
+---
+
 ## Overview
 
 **energy-exec** is a Telegram bot that helps structure daily plans based on energy levels, health metrics, and personal goals. It uses AI to generate adaptive day plans with work blocks, breaks, and tea/caffeine guidance.
