@@ -11,11 +11,12 @@ This document provides comprehensive context about the repository architecture, 
 ### Core User Flow
 
 1. **Onboarding**: Bot asks for timezone on first interaction
-2. **Morning check-in**: User shares body battery, sleep, mood, priorities, appointments
-3. **Day plan**: Bot generates energy-aware schedule with work blocks and breaks
-4. **Mid-day updates**: User messages when things change; bot adjusts the plan
-5. **Evening reflection**: User logs how the day went
-6. **History**: All interactions stored for future context
+2. **Morning check-in**: User shares body battery, sleep, mood, priorities, appointments → stored as facts
+3. **Day plan**: Bot generates energy-aware schedule with work blocks and breaks → stored in plans table
+4. **Mid-day updates**: User messages when things change; bot adds new facts and regenerates plan
+5. **Evening reflection**: User logs how the day went → stored as "reflection" type facts
+6. **Insights** (`/insights`): Bot analyzes all reflections + plan history for the day, generates energy insights and tips for tomorrow → tips stored as facts for next day
+7. **History**: All facts and plans preserved (append-only) for future context
 
 ---
 
@@ -137,6 +138,22 @@ This document provides comprehensive context about the repository architecture, 
 - [ ] Test end-to-end in production
 - [ ] Add integration tests for conversation flows (mocked AI)
 
+### Phase 7.5: Schema Migration (Facts-Based Architecture)
+
+- [ ] Create `daily_facts` table with migration
+- [ ] Create `day_plans` table with migration
+- [ ] Update `daily-log.ts` service to use facts-based storage
+- [ ] Update `planner.ts` to query facts and store plans separately
+- [ ] Rename `/planReview` command to `/insights`
+- [ ] Implement `/insights` logic:
+  - Query all "reflection" type facts for today
+  - Query all plans for today
+  - Generate energy insights and tips
+  - Store tips as "insight" facts for next day
+- [ ] Update morning check-in to query previous day's insights
+- [ ] Migrate existing `daily_logs` data to new tables (if any)
+- [ ] Remove deprecated `daily_logs` table
+
 ### Phase 8: Post-MVP (Future)
 
 - [ ] Proactive notifications (break reminders, tea time, etc.)
@@ -207,7 +224,40 @@ This document provides comprehensive context about the repository architecture, 
 | content | TEXT | Message text |
 | created_at | TIMESTAMP | When message was sent/received |
 
-#### `daily_logs` Table
+#### `daily_facts` Table (Append-Only)
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER (PK) | Auto-increment ID |
+| date | TEXT | Date in YYYY-MM-DD format |
+| fact_type | TEXT | Type of fact: "mood", "priority", "appointment", "reflection", "sleep", "body_battery", "note", "insight" |
+| content | TEXT | The actual fact content |
+| created_at | TIMESTAMP | When fact was recorded (for ordering within a day) |
+| source | TEXT | Optional: where the fact came from ("morning_checkin", "evening_reflection", "user_message", "insights_generated") |
+
+**Design rationale:** Append-only facts table replaces the monolithic `daily_logs` table. Each observation about a day is a separate row, enabling:
+- No overwrites (full audit trail of the day's evolution)
+- Schema flexibility (new fact types without migrations)
+- Simple LLM context building (`SELECT * FROM daily_facts WHERE date = ?`)
+- Natural temporal ordering via `created_at`
+
+#### `day_plans` Table (Append-Only)
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INTEGER (PK) | Auto-increment ID |
+| date | TEXT | Date in YYYY-MM-DD format |
+| plan_text | TEXT | The generated day plan |
+| created_at | TIMESTAMP | When plan was generated |
+
+**Design rationale:** Plans are stored separately from facts because:
+- Facts = inputs/observations (what the user tells us)
+- Plans = outputs (what the LLM generates)
+- Multiple rows per day preserve plan history (plan evolved 3 times today)
+- Latest plan: `SELECT * FROM day_plans WHERE date = ? ORDER BY created_at DESC LIMIT 1`
+- All plans for review: `SELECT * FROM day_plans WHERE date = ? ORDER BY created_at`
+
+#### `daily_logs` Table (DEPRECATED)
+> **Note:** This table is being replaced by `daily_facts` + `day_plans`. Kept temporarily for migration.
+
 | Column | Type | Description |
 |--------|------|-------------|
 | id | INTEGER (PK) | Auto-increment ID |
@@ -228,13 +278,121 @@ This document provides comprehensive context about the repository architecture, 
 
 2. **Config in database**: Allows bot to collect settings (like timezone) conversationally rather than requiring env vars for everything.
 
-3. **Separate messages vs daily_logs**: Raw message log for debugging/history; structured daily_logs for AI context. Different purposes, different schemas.
+3. **Facts-based storage (append-only)**: Instead of a monolithic daily_logs row with JSON blobs, we use an append-only `daily_facts` table. Each observation (mood, priority, reflection, etc.) is a separate row. Benefits:
+   - No overwrites — full history of day's evolution
+   - Schema flexibility — new fact types without migrations
+   - Simple LLM context — just query all facts for a date
+   - Prefixed types (`fact_type` column) for easy filtering
 
-4. **Conversation-based check-ins**: grammY conversations plugin handles multi-step flows cleanly. Better UX than parsing free-form text.
+4. **Separate plans table**: Plans (LLM output) are stored separately from facts (user input). Each plan version is a new row, preserving history. This enables:
+   - Showing plan evolution during `/insights`
+   - Clean separation of inputs vs outputs
+   - No complex upsert logic
 
-5. **Multiple AI providers**: Vercel AI SDK supports OpenAI-compatible providers (opencode-zen) and Google AI SDK. Users can switch between models via `/models` command.
+5. **Conversation-based check-ins**: grammY conversations plugin handles multi-step flows cleanly. Better UX than parsing free-form text.
 
-6. **SQLite + Railway volume**: Simple persistence. No external database service needed. SQLite handles single-user write patterns fine.
+6. **Multiple AI providers**: Vercel AI SDK supports OpenAI-compatible providers (opencode-zen) and Google AI SDK. Users can switch between models via `/models` command.
+
+7. **SQLite + Railway volume**: Simple persistence. No external database service needed. SQLite handles single-user write patterns fine.
+
+8. **Raw messages table retained**: Still log all Telegram messages for debugging/history. This is separate from structured facts.
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/start` | Initial greeting, triggers onboarding if needed |
+| `/help` | Shows available commands |
+| `/models` | Switch between AI providers |
+| `/checkin` | Start morning check-in conversation (adds facts, generates plan) |
+| `/today` | View current day's plan |
+| `/updatePlan` | Update plan with new information (adds facts, regenerates plan) |
+| `/reflect` | Evening reflection conversation (adds "reflection" type facts) |
+| `/insights` | Generate energy insights and tips for tomorrow |
+| `/viewDailyLog` | View all facts for today |
+
+#### `/insights` Command (formerly planReview)
+
+The `/insights` command provides an end-of-day analysis:
+
+**Input data:**
+- All "reflection" type facts for today
+- All plan versions for today (from `day_plans` table)
+- Body battery facts (start/end)
+
+**Output:**
+1. Analysis of energy usage patterns throughout the day
+2. What worked well vs what didn't (comparing plan to reflections)
+3. Concrete tips for tomorrow's planning
+
+**Side effect:**
+- Generated tips are stored as "insight" type facts for the **next day**
+- These insights feed into tomorrow's plan generation as context
+
+```
+Example flow:
+1. User runs /insights at end of day (Dec 3)
+2. Bot queries: all reflections + all plans for Dec 3
+3. Bot generates: "Based on today, tomorrow you should..."
+4. Bot stores: insight facts dated Dec 4
+5. Tomorrow's /checkin will see these insights in context
+```
+
+### Data Flow: Facts → LLM → Plans
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        User Interactions                         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│   /checkin, /reflect, /updatePlan, free-form messages           │
+│   → Each input creates one or more facts in daily_facts         │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      daily_facts table                           │
+│   ┌──────────┬───────────┬──────────────────────┬────────────┐  │
+│   │ date     │ fact_type │ content              │ created_at │  │
+│   ├──────────┼───────────┼──────────────────────┼────────────┤  │
+│   │ 2025-12-03│ body_battery│ Started at 78      │ 09:00      │  │
+│   │ 2025-12-03│ mood      │ Energetic after sleep│ 09:01      │  │
+│   │ 2025-12-03│ priority  │ Finish API refactor │ 09:02      │  │
+│   │ 2025-12-03│ appointment│ Team meeting 2pm   │ 09:03      │  │
+│   │ 2025-12-03│ reflection│ Meeting ran long    │ 18:00      │  │
+│   │ 2025-12-04│ insight   │ Schedule buffer after│ 21:00     │  │
+│   │          │           │ meetings tomorrow    │            │  │
+│   └──────────┴───────────┴──────────────────────┴────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+            ┌─────────────────┴─────────────────┐
+            ▼                                   ▼
+┌───────────────────────┐           ┌───────────────────────┐
+│   Plan Generation     │           │   /insights Command   │
+│                       │           │                       │
+│ 1. Query all facts    │           │ 1. Query reflections  │
+│    for today          │           │    for today          │
+│ 2. Query insights     │           │ 2. Query all plans    │
+│    from yesterday     │           │    for today          │
+│ 3. Build prompt       │           │ 3. Generate analysis  │
+│ 4. Call LLM           │           │ 4. Store insights as  │
+│ 5. Store in day_plans │           │    facts for tomorrow │
+└───────────────────────┘           └───────────────────────┘
+            │
+            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       day_plans table                            │
+│   ┌──────────┬───────────────────────────────┬────────────────┐ │
+│   │ date     │ plan_text                     │ created_at     │ │
+│   ├──────────┼───────────────────────────────┼────────────────┤ │
+│   │ 2025-12-03│ Morning plan v1              │ 09:05          │ │
+│   │ 2025-12-03│ Updated after meeting change │ 11:30          │ │
+│   │ 2025-12-03│ Final adjusted plan          │ 14:15          │ │
+│   └──────────┴───────────────────────────────┴────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### Environment Variables
 
@@ -388,5 +546,15 @@ The MVP includes Phases 0-7. The goal is a working bot that:
 2. **Railway SQLite persistence**: Verify volume persistence works correctly. Have backup strategy if issues arise.
 
 3. **Conversation flow details**: Exact questions and format for check-ins to be refined during implementation.
+
+### Pending Migrations
+
+> **Note:** The codebase currently uses the old `daily_logs` table. The following files need updating for the facts-based architecture:
+> - `src/lib/db/schema.ts` — Add `daily_facts` and `day_plans` tables
+> - `src/lib/services/daily-log.ts` — Refactor to facts-based queries
+> - `src/lib/services/planner.ts` — Update to query facts, store plans separately
+> - `src/bot/commands/planReview.ts` — Rename to `insights.ts`, implement new logic
+> - `src/bot/index.ts` — Register `/insights` command
+> - `src/bot/conversations/*.ts` — Update to create facts instead of updating daily_logs
 
 ---
