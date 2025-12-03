@@ -150,6 +150,10 @@ This document provides comprehensive context about the repository architecture, 
   - Query all plans for today
   - Generate energy insights and tips
   - Store tips as "insight" facts for next day
+- [ ] Implement `/progress` command:
+  - Query latest plan for today
+  - Send to LLM with current time
+  - Return filtered list of remaining items (read-only, no storage)
 - [ ] Update morning check-in to query previous day's insights
 - [ ] Migrate existing `daily_logs` data to new tables (if any)
 - [ ] Remove deprecated `daily_logs` table
@@ -305,11 +309,38 @@ This document provides comprehensive context about the repository architecture, 
 | `/help` | Shows available commands |
 | `/models` | Switch between AI providers |
 | `/checkin` | Start morning check-in conversation (adds facts, generates plan) |
-| `/today` | View current day's plan |
+| `/today` | View current day's plan (full, unfiltered) |
+| `/progress` | View remaining items in today's plan (filters out past items) |
 | `/updatePlan` | Update plan with new information (adds facts, regenerates plan) |
 | `/reflect` | Evening reflection conversation (adds "reflection" type facts) |
 | `/insights` | Generate energy insights and tips for tomorrow |
 | `/viewDailyLog` | View all facts for today |
+
+#### `/progress` Command
+
+The `/progress` command shows what's left in today's plan—a quick "what should I do now?" view.
+
+**Input data:**
+- Latest plan from `daily_plans` table
+- Current time (in user's timezone)
+
+**Behavior:**
+1. Fetches the latest plan for today
+2. Sends plan + current time to LLM
+3. LLM filters out items that have already passed
+4. Returns only remaining/upcoming items
+
+**Key characteristics:**
+- **Read-only**: Does NOT create a new plan or store anything
+- **No side effects**: Just a view, no database writes
+- **Quick reference**: For "what's next?" moments during the day
+
+```
+Example:
+- Current time: 2:30pm
+- Original plan has items at 9am, 11am, 2pm, 4pm, 6pm
+- /progress returns: "Here's what's left today: 4pm task, 6pm task"
+```
 
 #### `/insights` Command (formerly planReview)
 
@@ -554,7 +585,8 @@ The MVP includes Phases 0-7. The goal is a working bot that:
 > - `src/lib/services/daily-log.ts` — Refactor to facts-based queries
 > - `src/lib/services/planner.ts` — Update to query facts, store plans separately
 > - `src/bot/commands/planReview.ts` — Rename to `insights.ts`, implement new logic
-> - `src/bot/index.ts` — Register `/insights` command
+> - `src/bot/commands/progress.ts` — New command for filtered plan view
+> - `src/bot/index.ts` — Register `/insights` and `/progress` commands
 > - `src/bot/conversations/*.ts` — Update to create facts instead of updating daily_logs
 
 ---
